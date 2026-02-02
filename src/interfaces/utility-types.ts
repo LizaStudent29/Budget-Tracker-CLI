@@ -51,3 +51,50 @@ export const defaultLimits: CategoryLimits = {
     income: 10000,
     expense: 5000,
   };
+
+/**
+ * 1. Тип, который по имени поля транзакции возвращает его тип.
+ *    Если имя не является ключом ITransaction — даёт never.
+ */
+export type TransactionFieldType<TField> =
+  TField extends keyof ITransaction ? ITransaction[TField] : never;
+
+/**
+ * 2. Делает выбранные поля транзакции опциональными, остальные — обязательными.
+ *    Например, OptionalTransaction<'description' | 'date'>.
+ */
+export type OptionalTransaction<TFields extends keyof ITransaction> =
+  Omit<ITransaction, TFields> &
+  Partial<Pick<ITransaction, TFields>>;
+
+/**
+ * 3. Делает выбранные поля readonly, остальные остаются изменяемыми.
+ */
+export type ReadonlyTransactionFields<TFields extends keyof ITransaction> =
+  Omit<ITransaction, TFields> &
+  Readonly<Pick<ITransaction, TFields>>;
+
+/**
+ * 4. Проверяет, описывает ли тип транзакцию с type: 'income'.
+ */
+export type IsIncome<T> = T extends { type: "income" } ? true : false;
+
+/**
+ * 5. Пара удобных типизированных алиасов для сценариев использования
+ */
+
+// Транзакция, где date и description можно не указывать (например, черновик)
+export type DraftTransaction = OptionalTransaction<"date" | "description">;
+
+// Транзакция, у которой id и amount — только для чтения
+export type TransactionWithReadonlyCore = ReadonlyTransactionFields<
+  "id" | "amount"
+>;
+
+// Превью доходной транзакции (для сводки)
+export type IncomeTransactionPreview = {
+  id: TransactionFieldType<"id">;
+  amount: TransactionFieldType<"amount">;
+  date: TransactionFieldType<"date">;
+  type: Extract<TransactionType, "income">;
+};

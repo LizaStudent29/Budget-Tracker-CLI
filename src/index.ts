@@ -9,6 +9,15 @@ import {
 } from "./interfaces/utility-types";
 import { formatCurrency } from "budget-utils";
 
+import {
+    TransactionFieldType,
+    DraftTransaction,
+    TransactionWithReadonlyCore,
+    IncomeTransactionPreview,
+    IsIncome,
+  } from "./interfaces/utility-types";
+  
+
 async function main() {
   const personalAccount = new Account("Личный бюджет");
 
@@ -30,6 +39,48 @@ async function main() {
     "2023-01-10T00:00:00Z",
     "Коммунальные услуги"
   );
+
+    // === Примеры использования утилитных типов ===
+
+  // 1) TransactionFieldType — вытаскиваем тип отдельного поля
+  const exampleAmount: TransactionFieldType<"amount"> = 1234; // number
+
+  // 2) DraftTransaction — можем не задавать дату и описание
+  const draft: DraftTransaction = {
+    id: "draft-1",
+    amount: 999,
+    type: "expense",
+    // date и description можно не указывать — они опциональны
+  };
+
+  // 3) TransactionWithReadonlyCore — id и amount уже нельзя менять
+  const readonlyTx: TransactionWithReadonlyCore = {
+    id: salary.id,
+    amount: salary.amount,
+    type: salary.type,
+    date: salary.date,
+    description: salary.description,
+  };
+
+  readonlyTx.description = "Можно менять описание"; 
+
+  // 4) IncomeTransactionPreview — создаём список «превью» только для доходов
+  const incomePreviews: IncomeTransactionPreview[] = personalAccount
+    .getTransactions()
+    .filter((t) => t.type === "income")
+    .map((t) => ({
+      id: t.id,
+      amount: t.amount,
+      date: t.date,
+      type: "income" as const,
+    }));
+
+  console.log("\nПревью доходных транзакций:");
+  console.log(incomePreviews);
+
+  // 5) IsIncome — чисто типовая проверка: для типа { type: 'income' } вернёт true, иначе false
+  type IncomeCheck = IsIncome<{ type: "income"; amount: number }>; // true
+  type ExpenseCheck = IsIncome<{ type: "expense"; amount: number }>; // false
 
   salary.update({ description: "Зарплата за январь" });
 
