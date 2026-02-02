@@ -1,105 +1,32 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-// Вспомогательная функция для создания транзакции
-function createTransaction(id, amount, type, description, date = new Date().toISOString()) {
-    return {
-        id,
-        amount,
-        type,
-        date,
-        description,
-    };
-}
-// Фабрика для создания счёта, реализующего IAccount
-function createAccount(id, name) {
-    const transactions = [];
-    return {
-        id,
-        name,
-        addTransaction(transaction) {
-            transactions.push(transaction);
-        },
-        removeTransactionById(transactionId) {
-            const index = transactions.findIndex((t) => t.id === transactionId);
-            if (index === -1) {
-                return false;
-            }
-            transactions.splice(index, 1);
-            return true;
-        },
-        getTransactions() {
-            // возвращаем копию массива, чтобы его нельзя было сломать снаружи
-            return [...transactions];
-        },
-    };
-}
-// Объект-менеджер счетов, реализующий IAccountManager
-const accountManager = (() => {
-    const accounts = [];
-    return {
-        addAccount(account) {
-            accounts.push(account);
-        },
-        removeAccountById(accountId) {
-            const index = accounts.findIndex((acc) => acc.id === accountId);
-            if (index === -1) {
-                return false;
-            }
-            accounts.splice(index, 1);
-            return true;
-        },
-        getAccounts() {
-            return [...accounts];
-        },
-        getAccountById(id) {
-            return accounts.find((acc) => acc.id === id);
-        },
-        getSummary(accountId) {
-            const account = accounts.find((acc) => acc.id === accountId);
-            if (!account) {
-                // В реальном коде тут можно бросить ошибку, но по заданию просто вернём нули
-                return { income: 0, expenses: 0, balance: 0 };
-            }
-            const transactions = account.getTransactions();
-            let income = 0;
-            let expenses = 0;
-            for (const tx of transactions) {
-                if (tx.type === "income") {
-                    income += tx.amount;
-                }
-                else if (tx.type === "expense") {
-                    expenses += tx.amount;
-                }
-            }
-            const balance = income - expenses;
-            return { income, expenses, balance };
-        },
-    };
-})();
-// ===== Проверка работы =====
+const classes_1 = require("./classes");
+const classes_2 = require("./classes");
+const classes_3 = require("./classes");
+const manager = new classes_3.AccountManager();
 // Создаём счёт
-const mainAccount = createAccount(1, "Основной счёт");
+const mainAccount = new classes_2.Account(1, "Основной счёт");
 // Добавляем несколько транзакций
-mainAccount.addTransaction(createTransaction(1, 100000, "income", "Зарплата"));
-mainAccount.addTransaction(createTransaction(2, 15000, "expense", "Аренда квартиры"));
-mainAccount.addTransaction(createTransaction(3, 5000, "expense", "Еда"));
-mainAccount.addTransaction(createTransaction(4, 2000, "expense", "Подписки"));
+mainAccount.addTransaction(new classes_1.Transaction(1, 100000, "income", new Date("2026-02-01").toISOString(), "Зарплата"));
+mainAccount.addTransaction(new classes_1.Transaction(2, 15000, "expense", new Date("2026-02-02").toISOString(), "Аренда квартиры"));
+mainAccount.addTransaction(new classes_1.Transaction(3, 5000, "expense", new Date("2026-02-03").toISOString(), "Еда"));
+mainAccount.addTransaction(new classes_1.Transaction(4, 2000, "expense", new Date("2026-02-04").toISOString(), "Подписки"));
 // Добавляем счёт в менеджер
-accountManager.addAccount(mainAccount);
-// Проверяем методы
-console.log("=== Все счета ===");
-console.log(accountManager.getAccounts());
-console.log("=== Счёт по id ===");
-console.log(accountManager.getAccountById(1));
-console.log("=== Транзакции по счёту ===");
-console.log(mainAccount.getTransactions());
-console.log("=== Сводка по счёту ===");
-const summary = accountManager.getSummary(1);
-console.log(summary);
-// Пробуем удалить транзакцию
-console.log("Удаление транзакции с id = 2:");
-const removed = mainAccount.removeTransactionById(2);
-console.log("Удалено:", removed);
-console.log("Транзакции после удаления:", mainAccount.getTransactions());
-console.log("Сводка после удаления транзакции:");
-console.log(accountManager.getSummary(1));
+manager.addAccount(mainAccount);
+// ===== Проверка работы методов =====
+console.log("=== Все счета (getAllAccounts) ===");
+console.log(manager.getAccounts());
+console.log("\n=== Счёт по id (getAccountById) ===");
+console.log(manager.getAccountById(1)?.toString());
+console.log("\n=== Сводка по счёту (Account.getSummary) ===");
+console.log(mainAccount.getSummary());
+console.log(mainAccount.getSummaryString());
+console.log("\n=== Общая сводка по всем счетам (AccountManager.getSummary) ===");
+console.log(manager.getSummary(1));
+console.log(manager.getSummaryString());
+console.log("\n=== Полное строковое представление бюджета (AccountManager.toString) ===");
+console.log(manager.toString());
+// Пробуем удалить счёт
+console.log("\nУдаляем счёт с id = 1");
+console.log("Удалено:", manager.removeAccountById(1));
+console.log("Счета после удаления:", manager.getAccounts());
