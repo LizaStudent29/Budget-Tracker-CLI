@@ -1,15 +1,23 @@
 {
   "compilerOptions": {
-    "target": "es2015",
-    "module": "commonjs",
+    "target": "ESNext",
+    "module": "ESNext",
     "moduleResolution": "node",
+
     "rootDir": "./src",
     "outDir": "./dist",
+
     "strict": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true
-  }
+    "skipLibCheck": true,
+
+    "baseUrl": "./",
+    "paths": {
+      "budget-utils": ["./src/lib/budget-utils.js"]
+    }
+  },
+  "include": ["src"]
 }
 
 
