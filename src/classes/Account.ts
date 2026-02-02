@@ -7,6 +7,10 @@ import { ITransaction } from "../interfaces/ITransaction";
 import { formatCurrency } from "budget-utils";
 import { AccountUpdate } from "../interfaces/utility-types";
 
+import { escapeCsvValue } from "../utils/escapeCsvValue";
+import { writeFile } from "fs/promises";
+
+
 export class Account implements IAccount, ISummary {
   private readonly _id: string;
 
@@ -89,5 +93,38 @@ export class Account implements IAccount, ISummary {
         : this.transactions.map((t) => "  • " + t.toString()).join("\n");
 
     return `${header}\n${txLines}`;
+  }
+
+  /**
+   * Экспорт всех транзакций счёта в CSV-файл.
+   * Формат:
+   * id,amount,type,date,description
+   */
+  async exportTransactionsToCSV(filename: string): Promise<void> {
+    // заголовок
+    const header = "id,amount,type,date,description";
+
+    // строки с данными
+    const lines = this.transactions.map((t) => {
+      return [
+        escapeCsvValue(t.id),
+        escapeCsvValue(t.amount),
+        escapeCsvValue(t.type),
+        escapeCsvValue(t.date),
+        escapeCsvValue(t.description),
+      ].join(",");
+    });
+
+    const csvContent = [header, ...lines].join("\n");
+
+    try {
+      await writeFile(filename, csvContent, "utf8");
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : String(err);
+      throw new Error(
+        `Не удалось сохранить CSV-файл "${filename}": ${message}`
+      );
+    }
   }
 }
