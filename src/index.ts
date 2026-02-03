@@ -1,3 +1,4 @@
+import "reflect-metadata";
 import { Account } from "./classes/Account";
 import { Transaction } from "./classes/Transaction";
 import { AccountManager } from "./classes/AccountManager";
@@ -128,6 +129,22 @@ async function main() {
   // 🔹 новый шаг — экспорт в CSV
   await personalAccount.exportTransactionsToCSV("transactions.csv");
   console.log('\nТранзакции экспортированы в "transactions.csv"');
+
+  console.log("\nПробуем изменить id и name счёта...");
+  try {
+    // @ts-expect-error — специально нарушаем
+    (personalAccount as any).id = "HACKED";
+  } catch (e) {
+    console.error("Ожидаемая ошибка при изменении id:", e);
+  }
+
+  try {
+    // @ts-expect-error
+    (personalAccount as any).name = "Новый владелец";
+  } catch (e) {
+    console.error("Ожидаемая ошибка при изменении name:", e);
+  }
+
 }
 
 // Запуск main с обработкой ошибок

@@ -10,26 +10,35 @@ import { AccountUpdate } from "../interfaces/utility-types";
 import { escapeCsvValue } from "../utils/escapeCsvValue";
 import { writeFile } from "fs/promises";
 
+import { LogClass } from "../decorators/LogClass";
+import { LogMethod } from "../decorators/LogMethod";
+import { ReadOnly } from "../decorators/ReadOnly";
+import { Metadata } from "../decorators/Metadata";
 
+@LogClass
 export class Account implements IAccount, ISummary {
-  private readonly _id: string;
+  @ReadOnly
+  public id: string;
 
-  get id(): string {
-    return this._id;
-  }
+  @ReadOnly
+  public name: string;
 
+  @Metadata("description", "Массив транзакций счета")
   private transactions: ITransaction[] = [];
 
-  constructor(public name: string) {
-    this._id = uuidv4();
+  constructor(name: string) {
+    this.id = uuidv4();
+    this.name = name;
   }
 
   // === IAccount ===
 
+  @LogMethod
   addTransaction(transaction: ITransaction): void {
     this.transactions.push(transaction);
   }
 
+  @LogMethod
   removeTransactionById(transactionId: string): boolean {
     const index = this.transactions.findIndex((t) => t.id === transactionId);
     if (index === -1) {
@@ -39,6 +48,7 @@ export class Account implements IAccount, ISummary {
     return true;
   }
 
+  @LogMethod
   getTransactions(): ITransaction[] {
     return [...this.transactions];
   }
@@ -77,7 +87,15 @@ export class Account implements IAccount, ISummary {
   }
 
   getSummaryString(): string {
-    return `Счёт "${this.name}": баланс ${formatCurrency(
+    // читаем метаданные свойства transactions
+    const metaDescription =
+      Reflect.getMetadata(
+        "description",
+        Object.getPrototypeOf(this),
+        "transactions"
+      ) || "без описания";
+
+    return `Счёт "${this.name}" (transactions: ${metaDescription}): баланс ${formatCurrency(
       this.balance
     )}, доходы ${formatCurrency(this.income)}, расходы ${formatCurrency(
       this.expenses
@@ -101,10 +119,8 @@ export class Account implements IAccount, ISummary {
    * id,amount,type,date,description
    */
   async exportTransactionsToCSV(filename: string): Promise<void> {
-    // заголовок
     const header = "id,amount,type,date,description";
 
-    // строки с данными
     const lines = this.transactions.map((t) => {
       return [
         escapeCsvValue(t.id),
@@ -120,8 +136,7 @@ export class Account implements IAccount, ISummary {
     try {
       await writeFile(filename, csvContent, "utf8");
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : String(err);
+      const message = err instanceof Error ? err.message : String(err);
       throw new Error(
         `Не удалось сохранить CSV-файл "${filename}": ${message}`
       );
