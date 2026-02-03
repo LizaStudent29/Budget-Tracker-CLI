@@ -10,22 +10,11 @@ import { AccountUpdate } from "../interfaces/utility-types";
 import { escapeCsvValue } from "../utils/escapeCsvValue";
 import { writeFile } from "fs/promises";
 
-import { LogClass } from "../decorators/LogClass";
-import { LogMethod } from "../decorators/LogMethod";
-import { ReadOnly } from "../decorators/ReadOnly";
-import { Metadata } from "../decorators/Metadata";
 
-@LogClass
 export class Account implements IAccount, ISummary {
-  @ReadOnly
-  public id: string;
-
-  @ReadOnly
-  public name: string;
-
-  @Metadata("description", "Массив транзакций счета")
-  private transactions: ITransaction[] = [];
-
+    public id: string;
+    public name: string;
+    private transactions: ITransaction[] = [];
   constructor(name: string) {
     this.id = uuidv4();
     this.name = name;
@@ -33,12 +22,10 @@ export class Account implements IAccount, ISummary {
 
   // === IAccount ===
 
-  @LogMethod
   addTransaction(transaction: ITransaction): void {
     this.transactions.push(transaction);
   }
 
-  @LogMethod
   removeTransactionById(transactionId: string): boolean {
     const index = this.transactions.findIndex((t) => t.id === transactionId);
     if (index === -1) {
@@ -48,7 +35,6 @@ export class Account implements IAccount, ISummary {
     return true;
   }
 
-  @LogMethod
   getTransactions(): ITransaction[] {
     return [...this.transactions];
   }
@@ -87,31 +73,23 @@ export class Account implements IAccount, ISummary {
   }
 
   getSummaryString(): string {
-    // читаем метаданные свойства transactions
-    const metaDescription =
-      Reflect.getMetadata(
-        "description",
-        Object.getPrototypeOf(this),
-        "transactions"
-      ) || "без описания";
-
-    return `Счёт "${this.name}" (transactions: ${metaDescription}): баланс ${formatCurrency(
+    return `Счёт "${this.name}": баланс ${formatCurrency(
       this.balance
     )}, доходы ${formatCurrency(this.income)}, расходы ${formatCurrency(
       this.expenses
-    )}, транзакций ${this.transactions.length}`;
+    )}`;
   }
+  
 
   toString(): string {
     const header = this.getSummaryString();
-
     const txLines =
       this.transactions.length === 0
         ? "  (нет транзакций)"
         : this.transactions.map((t) => "  • " + t.toString()).join("\n");
-
     return `${header}\n${txLines}`;
   }
+  
 
   /**
    * Экспорт всех транзакций счёта в CSV-файл.
